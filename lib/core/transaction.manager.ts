@@ -69,6 +69,7 @@ export class TransactionManager implements ITransactionManager {
         this.logger.warn(
           `[tx-id: ${trx.id}] Transaction did not rollback. check transactional rollback configuration.`,
         );
+        await TransactionManager.commit(trx);
 
         throw ex;
       }
