@@ -1,7 +1,13 @@
 node_modules
 src
+lib
 tests
 coverage
 temp
 yarn-error.log
 tsconfig.*
+release-it.json
+tests
+.prettierrc
+.idea
+.husky
