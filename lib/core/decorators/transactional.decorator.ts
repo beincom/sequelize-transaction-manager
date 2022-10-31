@@ -1,48 +1,59 @@
 import { randomUUID } from 'crypto';
+import { ALL_METHOD } from '../constants';
 import { createProxyTransactionMethod } from '../proxy';
-import { ALL_METHOD, BLACKLIST_METHODS } from '../constants';
 import { ClassTransactionOptions, MethodTransactionOptions, TrxOptions } from '../types';
 
-const applyToAllMethod = (decorator: any, applyMethods: string | string[]) => {
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  return (target: Function): void => {
-    const methods = Object.getOwnPropertyNames(target.prototype).filter((method) =>
-      BLACKLIST_METHODS.includes(method),
-    );
-    for (const methodName of methods) {
-      if (applyMethods.includes(methodName) || applyMethods === ALL_METHOD) {
-        let descriptor = Object.getOwnPropertyDescriptor(target.prototype, methodName);
-        if (descriptor) {
-          descriptor = decorator(target.prototype, methodName, descriptor);
-          Object.defineProperty(target.prototype, methodName, descriptor);
-        }
-      }
-    }
-  };
-};
+export const  cloneMetadata = (source: any, target: any) => {
+  const keys = Reflect.getMetadataKeys(source);
+  keys.forEach((key) => {
+    const value = Reflect.getMetadata(key, source);
+    Reflect.defineMetadata(key, value, target);
+  });
+}
 
-const methodDecorator = (trxOptions: TrxOptions): MethodDecorator =>
-  function <T>(
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    target: Function,
-    propertyKey: string | symbol,
-    descriptor: PropertyDescriptor,
-  ): TypedPropertyDescriptor<T> {
+export const methodDecorator = (trxOptions: TrxOptions) =>
+   (target: any, methodName: string | symbol, descriptor: TypedPropertyDescriptor<any>) => {
     const originalMethod = descriptor.value;
     const requestId = randomUUID();
-
-    descriptor.value = async function (this: any, ...args: any[]) {
+    descriptor.value = async function (tg: any, ...args: any[]) {
       return createProxyTransactionMethod(originalMethod, {
         ...trxOptions,
         requestId,
       })(this, ...args);
     };
-    return descriptor as any;
+    return descriptor;
   };
 
-export function Transactional(trxOptions?: MethodTransactionOptions);
-export function Transactional(methods: string | string[], trxOptions?: ClassTransactionOptions);
-export function Transactional(...args: any[]) {
+export const applyToAllMethod = (decorator: any, applyMethods: string | string[]) => {
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  return <T extends Function>(target: T): void => {
+    const propertyDescriptors = Object.getOwnPropertyDescriptors(target.prototype);
+
+    for (const [propName, descriptor] of Object.entries(propertyDescriptors)) {
+
+      const isMethod = propName != 'constructor' && typeof descriptor.value == 'function';
+      const isApplyAllMethod = applyMethods === ALL_METHOD;
+
+      if (!isMethod) continue;
+      if (!isApplyAllMethod && !applyMethods.includes(propName)) continue;
+
+      const originalMethod = descriptor.value;
+
+      decorator(target, propName, descriptor);
+
+      if (originalMethod != descriptor.value) {
+        cloneMetadata(originalMethod, descriptor.value);
+      }
+      Object.defineProperty(target.prototype, propName, descriptor);
+    }
+  }
+};
+
+
+// eslint-disable-next-line @typescript-eslint/ban-types
+export function Transactional(trxOptions?: MethodTransactionOptions): MethodDecorator;
+export function Transactional(methods: string | string[], trxOptions?: ClassTransactionOptions): ClassDecorator;
+export function Transactional(...args: any[]): ClassDecorator | MethodDecorator {
   if (typeof args[0] === 'string' || Array.isArray(args[0])) {
     return applyToAllMethod(methodDecorator(args[1]), args[0]);
   }

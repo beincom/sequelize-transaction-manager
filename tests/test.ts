@@ -1,10 +1,10 @@
-import { DataTypes, Model, Sequelize } from 'sequelize';
-import { Logger } from '../lib/core/loggers';
-import { initTransactionalContext } from '../lib/core/init';
-import { RuntimeException } from '../lib/core/exceptions';
-import { nextFn, Transactional } from '../lib';
-import { randomUUID } from 'crypto';
-import { $BeforeCommit, $Committed } from '../lib/core/hooks';
+import {DataTypes, Model, Sequelize} from 'sequelize';
+import {Logger} from '../lib/core/loggers';
+import {initTransactionalContext} from '../lib/core/init';
+import {RuntimeException} from '../lib/core/exceptions';
+import {IsolationLevel, nextFn, Propagation, Transactional} from '../lib';
+import {randomUUID} from 'crypto';
+import {$BeforeCommit, $Committed} from '../lib/core/hooks';
 
 initTransactionalContext();
 
@@ -60,10 +60,12 @@ const UserModel = Database.getInstance().define<
   },
 );
 
+@Transactional('*',{
+  propagation: Propagation.MANDATORY,
+  isolation: IsolationLevel.SERIALIZABLE,
+  noRollbackFor: [RuntimeException],
+})
 export class CreateUserService {
-  @Transactional({
-    noRollbackFor: [RuntimeException],
-  })
   public async create() {
     const id = randomUUID();
 
@@ -84,10 +86,10 @@ export class CreateUserService {
   }
 }
 
+@Transactional(['update'],{
+  noRollbackFor: [RuntimeException],
+})
 export class UpdateUserService {
-  @Transactional({
-    noRollbackFor: [RuntimeException],
-  })
   public async update() {
     const user2 = await UserModel.create({
       id: randomUUID(),
@@ -110,7 +112,7 @@ export class UpdateUserService {
       createUserService.create().then((result) => {});
     },
     {
-      enableLog: false,
+      enableLog: true,
     },
   );
 })();
