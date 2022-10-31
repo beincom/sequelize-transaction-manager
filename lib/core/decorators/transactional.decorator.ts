@@ -15,7 +15,7 @@ export const methodDecorator = (trxOptions: TrxOptions) =>
    (target: any, methodName: string | symbol, descriptor: TypedPropertyDescriptor<any>) => {
     const originalMethod = descriptor.value;
     const requestId = randomUUID();
-    descriptor.value = async function (tg: any, ...args: any[]) {
+    descriptor.value = async function (...args: any[]) {
       return createProxyTransactionMethod(originalMethod, {
         ...trxOptions,
         requestId,
