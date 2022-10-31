@@ -1,3 +1,4 @@
+export * from './init';
 export * from './proxy';
 export * from './types';
 export * from './hooks';

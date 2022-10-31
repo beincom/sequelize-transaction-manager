@@ -47,7 +47,7 @@ export class Logger implements ILogger {
       return;
     }
     // eslint-disable-next-line no-console
-    console.log(this.logFormat('LOG', blue, msg, msg));
+    console.log(this.logFormat('LOG', blue, msg));
   }
 
   public info(...msg: any[]) {
