@@ -6,7 +6,7 @@ coverage
 temp
 yarn-error.log
 tsconfig.*
-release-it.json
+.release-it.json
 tests
 .prettierrc
 .idea
