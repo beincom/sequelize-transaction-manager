@@ -24,7 +24,7 @@ export function createProxyTransactionMethod<
   function proxyMethod(target: any, ...args: any[]) {
     const propagation = options?.propagation ? options.propagation : Propagation.REQUIRED;
 
-    const isolationLevel = options?.isolation ? options.isolation : IsolationLevel.READ_COMMITTED;
+    const isolationLevel = options?.isolation;
 
     const rollbackExceptions = options?.rollbackFor ? options.rollbackFor : [];
 
